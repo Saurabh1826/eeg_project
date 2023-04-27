@@ -400,6 +400,7 @@ def plot_matrix(matrix, ch_names, figsize=None) :
   fig, ax = plt.subplots(figsize=figsize)
   plt.imshow(matrix)
   plt.colorbar()
+  plt.show()
 
 # Function to calculate coherence between data channels
 def coherence(data, fs) :
@@ -594,6 +595,7 @@ def plot_metrics(features, times, names=None, grid_dims=None, figsize=(15,15)) :
     axs[row, col].set_title(names[i])
     axs[row, col].set_xlabel('Time (s)')
     axs[row, col].set_ylabel('Value')
+  plt.show()
 
 def common_average_reference(data) :
   """
@@ -731,6 +733,8 @@ def plot_eeg(data, sfreq, start=0, end=15, indices=None, ch_names=None, padding=
   ax.set_yticks(means)
   if ch_names:
     ax.set_yticklabels(ch_names)
+  
+  plt.show()
 
 # Function to plot bipolar montage of eeg. Input is a dictionary that is a bipolar montage of an eeg
 def plot_bipolar_montage(data, sfreq, start=0, end=15, indices=None, padding=0, figsize = (24,8)) :
@@ -823,32 +827,34 @@ def plot_bipolar_montage(data, sfreq, start=0, end=15, indices=None, padding=0, 
   ax.set_yticks(means)
   if ch_names:
     ax.set_yticklabels(ch_names)
+  
+  plt.show()
 
 
 
 def load_full_channels(dataset, duration_secs, sampling_rate, chn_idx, offset_time=0):
-"""
-Loads the entire channel from IEEG.org
-Input:
-  dataset: the IEEG dataset object
-  duration_secs: the duration of the channel, in seconds
-  sampling_rate: the sampling rate of the channel, in Hz
-  chn_idx: the indicies of the m channels you want to load, as an array-like object
-Returns:
-  [n, m] ndarry of the channels' values.
   """
-#stores the segments of the channel's data
-chn_segments = []
+  Loads the entire channel from IEEG.org
+  Input:
+    dataset: the IEEG dataset object
+    duration_secs: the duration of the channel, in seconds
+    sampling_rate: the sampling rate of the channel, in Hz
+    chn_idx: the indicies of the m channels you want to load, as an array-like object
+  Returns:
+    [n, m] ndarry of the channels' values.
+  """
+  #stores the segments of the channel's data
+  chn_segments = []
 
-#how many segments do we expect?
-num_segments = int(np.ceil(duration_secs * sampling_rate / 1e5))
+  #how many segments do we expect?
+  num_segments = int(np.ceil(duration_secs * sampling_rate / 1e5))
 
-#segment start times and the step
-seg_start, step = np.linspace(1 + offset_time*1e6, offset_time*1e6 + duration_secs*1e6, num_segments, endpoint=False, retstep=True)
-#get the segments
-for start in seg_start:
-  chn_segments.append(dataset.get_data(start, step, chn_idx))
+  #segment start times and the step
+  seg_start, step = np.linspace(1 + offset_time*1e6, offset_time*1e6 + duration_secs*1e6, num_segments, endpoint=False, retstep=True)
+  #get the segments
+  for start in seg_start:
+    chn_segments.append(dataset.get_data(start, step, chn_idx))
 
-#concatenate the segments vertically
-return np.vstack(chn_segments)
+  #concatenate the segments vertically
+  return np.vstack(chn_segments)
 
