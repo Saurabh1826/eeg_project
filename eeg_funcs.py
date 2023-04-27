@@ -858,3 +858,30 @@ def load_full_channels(dataset, duration_secs, sampling_rate, chn_idx, offset_ti
   #concatenate the segments vertically
   return np.vstack(chn_segments)
 
+
+# Run clip through preprocessing
+def preprocess(data_clip, sfreq) :
+  # Get clip with the start, end times
+  clip = np.copy(data_clip)
+
+  # Run filtering on the clip and common average reference it
+  notch = create_notch_filter(4, 55, 65, sfreq)
+  high_pass = create_high_pass_filter(4, 0.5, sfreq)
+  # low_pass = create_low_pass_filter()
+  b, a = sig.butter(N=4, Wn=5, btype='lowpass', fs=sfreq)
+
+  padding_right = np.copy(clip)
+  padding_left = np.copy(clip)
+  clip = np.concatenate((clip, padding_right), axis=1)
+  clip = np.concatenate((padding_left, clip), axis=1)
+
+  clip = apply_filter(clip, notch)
+  clip = apply_filter(clip, high_pass)
+  clip = apply_filter(clip, (b, a))
+
+  # Remove padding 
+  clip = clip[:, len(padding_left[0]):-len(padding_right[0])]
+
+  # clip = common_average_reference(clip)
+
+  return clip
