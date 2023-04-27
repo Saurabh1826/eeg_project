@@ -1,5 +1,13 @@
 ## Imports and helpful functions for importing data from IEEG.org
 
+# Uncomment if using colab
+# !pip install git+https://github.com/aestrivex/bctpy.git
+# !pip install git+https://github.com/ieeg-portal/ieegpy.git
+# from google.colab import files
+# from google.colab import drive
+# drive.mount('/content/gdrive')
+# !cp gdrive/MyDrive/eeg_funcs.py ./eeg_funcs.py
+
 from ieeg.auth import Session
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,11 +23,6 @@ import pandas as pd
 import json
 from eeg_funcs import *
 # import mtspec
-
-
-# Uncomment if using colab
-# !pip install git+https://github.com/aestrivex/bctpy.git
-# !pip install git+https://github.com/ieeg-portal/ieegpy.git
 
 # Open config file
 config = json.load(open('config.json', 'r'))
