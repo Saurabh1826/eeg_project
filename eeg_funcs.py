@@ -809,4 +809,29 @@ def plot_bipolar_montage(data, sfreq, start=0, end=15, indices=None, padding=0, 
 
 
 
+def load_full_channels(dataset, duration_secs, sampling_rate, chn_idx, offset_time=0):
+"""
+Loads the entire channel from IEEG.org
+Input:
+  dataset: the IEEG dataset object
+  duration_secs: the duration of the channel, in seconds
+  sampling_rate: the sampling rate of the channel, in Hz
+  chn_idx: the indicies of the m channels you want to load, as an array-like object
+Returns:
+  [n, m] ndarry of the channels' values.
+  """
+#stores the segments of the channel's data
+chn_segments = []
+
+#how many segments do we expect?
+num_segments = int(np.ceil(duration_secs * sampling_rate / 1e5))
+
+#segment start times and the step
+seg_start, step = np.linspace(1 + offset_time*1e6, offset_time*1e6 + duration_secs*1e6, num_segments, endpoint=False, retstep=True)
+#get the segments
+for start in seg_start:
+  chn_segments.append(dataset.get_data(start, step, chn_idx))
+
+#concatenate the segments vertically
+return np.vstack(chn_segments)
 
