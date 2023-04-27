@@ -137,8 +137,25 @@ def plot_psd(signal, sfreq, title=None) :
     plt.title(title)
   plt.xlabel('Frequency (Hz)')
   plt.ylabel('Log(Power)')
-  plt.xlim(0, 5)
   plt.show()
+
+def psd(signal, sfreq, plot=True, log_psd=True, title=None) :
+  N = len(signal) # N is number of time samples in the signal clip
+  T = 1 / sfreq # T is time interval between adjacent samples
+  y = fft(signal) # Compute fft of signal
+  freqs = fftfreq(N, T)[:N//2] # freqs is an array containing the DFT sample frequencies
+  spectrum = 2.0/N * np.abs(y[0:N//2])
+  if (log_psd == True) :
+    spectrum = np.log(np.clip(spectrum), a_min=0.00001, a_max=1e20)
+  if (plot == True) :
+    plt.plot(freqs, spectrum)
+    if (title != None) :
+      plt.title(title)
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Log(Power)')
+    plt.show()
+  
+  return freqs, spectrum
 
 # Function to make a butterworth notch filter
 def create_notch_filter(order, low_cutoff, high_cutoff, fs) :
