@@ -43,7 +43,7 @@ f = open(config['pwd_fpath'], 'rb')
 pwd = f.read().decode()
 session = Session(config['username'], pwd)
 
-for file in config['ieeg_filenames'][:5] :
+for file in config['ieeg_filenames'][:2] :
   print(cnt)
   cnt += 1
 
