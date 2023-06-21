@@ -1,9 +1,9 @@
 ﻿filename	acq_time
-eeg/sub-0001_ses-1_task-positive_run-01_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-02_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-03_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-04_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-05_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-06_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-07_eeg.vhdr	n/a
-eeg/sub-0001_ses-1_task-positive_run-08_eeg.vhdr	n/a
+eeg/sub-0001_ses-1_task-positive_run-01_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-02_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-03_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-04_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-05_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-06_eeg.edf	2023-06-20T18:32:13.000000Z
+eeg/sub-0001_ses-1_task-positive_run-07_eeg.edf	2023-06-20T18:32:14.000000Z
+eeg/sub-0001_ses-1_task-positive_run-08_eeg.edf	2023-06-20T18:32:14.000000Z

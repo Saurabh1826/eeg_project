@@ -1,6 +1,6 @@
 {
     "TaskName": "positive",
-    "Manufacturer": "Elekta",
+    "Manufacturer": "n/a",
     "PowerLineFrequency": "n/a",
     "SamplingFrequency": 500.0,
     "SoftwareFilters": "n/a",
