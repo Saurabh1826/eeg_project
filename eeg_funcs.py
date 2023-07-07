@@ -885,3 +885,30 @@ def preprocess(data_clip, sfreq) :
   # clip = common_average_reference(clip)
 
   return clip
+
+
+
+# Function to return array of averagedPsd arrays (one per time window), based
+# on the Kerr 2012 paper. Returns a numpy array of shape (numBands, numWindows), 
+# where each row is an array of a particular frequency for all time windows. 
+# Input signal is the original signal, not a power spectrum. 
+def averagePsds(signal, sfreq, timeWindow, numBands) :
+  averagedPsds = []
+  ind = 0
+  while (ind + timeWindow * sfreq <= len(signal)) :
+      # Calculate the psd for the current time window
+      spectrum = psd(signal[int(ind) : int(ind + timeWindow * sfreq)], sfreq)[1]
+      N = timeWindow * sfreq
+      # Variable that is the discrete frequency associated with real frequency of 1 Hz,
+      # based on the formula k = N * f_k / f_s
+      k = int(N * 1 / sfreq)
+      # Get the averaged psd of spectrum
+      averagedPsd = [0 for i in range(numBands)]
+      for i in range(len(averagedPsd)) :
+          averagedPsd[i] = np.mean(spectrum[int(k * i) : int(k * (i + 1))])
+      # Append averagedPsd to averagedPsds
+      averagedPsds.append(averagedPsd)
+      # Increment ind
+      ind += timeWindow * sfreq
+  
+  return np.array(averagedPsds).T
