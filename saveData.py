@@ -32,7 +32,6 @@ pwd = f.read().decode()
 session = Session(config['username'], pwd)
 cnt = 0
 powers = []
-sessionNum = 0
 
 # Load in admissionToSubject.json
 with open('admissionToSubject.json', 'r') as json_file:
@@ -40,6 +39,10 @@ with open('admissionToSubject.json', 'r') as json_file:
 
 # Dict to keep track of which session (ie: admission id) is on which run
 runsDict = {}
+# Dict to keep track of which subject is on which session
+subjectToSession = {}
+# Dict to keep track of which admission is which session number
+admissionToSession = {}
 
 fileNames = ['EMU0190_Day01_1', 'EMU0190_Day02_1']
 
@@ -50,8 +53,6 @@ for file in fileNames :
     cnt += 1
     # if (cnt != 6) :
     #     continue
-
-    sessionNum += 1
 
     ## LOAD FILE ##
     try :
@@ -115,6 +116,7 @@ for file in fileNames :
 
         admission = file[:7]
         admissionID = file[3:7]
+        subject = admissionToSubject[admission]
         runNumber = 0
         if (admissionID in runsDict) :
             runNumber = runsDict[admissionID] + 1
@@ -122,15 +124,26 @@ for file in fileNames :
         else :
             runNumber = 1
             runsDict[admissionID] = 1
+        if (subject in subjectToSession) :
+            if (admissionID in admissionToSession) :
+                sessionNum = admissionToSession[admissionID]
+            else :
+                sessionNum = subjectToSession[subject] + 1
+                admissionToSession[admissionID] = session
+                subjectToSession[subject] += 1
+        else :
+            sessionNum = 1
+            subjectToSession[subject] = 1
+            admissionToSession[admissionID] = 1
         
-        bids_path = BIDSPath(subject=admissionToSubject[admission], session='preimplant'+admissionID, 
-            run=runNumber, datatype='eeg', root='./bids', task='task')
+        bids_path = BIDSPath(subject=subject, session='preimplant'+str(sessionNum).zfill(4), 
+            run=runNumber, datatype='eeg', root='./bidsData', task='task')
 
         write_raw_bids(raw, bids_path=bids_path, verbose=0)
 
         # Update json sidecar file with ieeg file name for the run
-        bids_path = BIDSPath(subject=admissionToSubject[admission], session='preimplant'+admissionID, 
-            run=runNumber, datatype='eeg', root='./bids', task='task', extension='.json')
+        bids_path = BIDSPath(subject=subject, session='preimplant'+str(sessionNum).zfill(4), 
+            run=runNumber, datatype='eeg', root='./bidsData', task='task', extension='.json')
         update_sidecar_json(bids_path=bids_path, entries={"fileName": file})
 
         clip_number += 1

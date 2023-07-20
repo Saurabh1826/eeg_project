@@ -1,6 +1,15 @@
 # Manual additions
 config.json
 .DS_Store
+bidsData/
+pwd_file.bin
+temp.edf
+env/
+env2/
+fig.png
+features.json
+fig.png
+out.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
