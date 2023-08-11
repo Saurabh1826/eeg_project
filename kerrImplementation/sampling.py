@@ -139,74 +139,128 @@ minSampleFeatures = {'channels': [], 'features': []}
 maxSampleFeatures = {'channels': [], 'features': []}
 stdSampleFeatures = {'channels': [], 'features': []}
 
+f, axes = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(24, 12))
+
 for i in range(len(channels)) :
+    if (i > 3) : break
     print('----', i)
     averagedPsds = averagePsds(clips[i], sfreq, timeWindows[timeWindowInd], numBands)
     numSamples = 1000
     meanVars, minVars, maxVars, stdVars = [], [], [], []
-    for size in sampleSizes :
-        # print(f'Sample size: {size}')
-        means, mins, maxes, stds = [], [], [], []
-        for _ in range(numSamples) :
-            sample = np.random.choice(averagedPsds[0], size=size, replace=False)
-            means.append(np.mean(sample))
-            mins.append(np.min(sample))
-            maxes.append(np.max(sample))
-            stds.append(np.std(sample))
+    meanVarsDict = {'sample size': [], 'variance': []}
+    d = {'sample size': [], 'features': []}
+    for freq in range(numBands) :
+        if (freq in [58, 59, 60, 61, 62]) : continue
+        print('---------', freq)
+        for size in sampleSizes :
+            # print(f'Sample size: {size}')
+            means, mins, maxes, stds = [], [], [], []
+            for _ in range(numSamples) :
+                sample = np.random.choice(averagedPsds[freq], size=size, replace=False)
+                means.append(np.mean(sample))
+                mins.append(np.min(sample))
+                maxes.append(np.max(sample))
+                stds.append(np.std(sample))
 
 
-        means = np.array(means)
-        mins = np.array(mins)
-        maxes = np.array(maxes)
-        stds = np.array(stds)
-        
-        meanVars.append(np.std(means) ** 2)
-        minVars.append(np.std(mins) ** 2)
-        maxVars.append(np.std(maxes) ** 2)
-        stdVars.append(np.std(stds) ** 2)
+            means = np.array(means)
+            mins = np.array(mins)
+            maxes = np.array(maxes)
+            stds = np.array(stds)
 
-        # Normalize the sample features
-        means = (means - np.mean(means)) / np.std(means) 
-        mins = (mins - np.mean(mins)) / np.std(mins) 
-        maxes = (maxes - np.mean(maxes)) / np.std(maxes) 
-        stds = (stds - np.mean(stds)) / np.std(stds) 
+            d['sample size'] += [size] * numSamples
+            d['features'] += means.tolist()
 
-        if (size == 50) :
-            meanSampleFeatures['channels'] += [channels[i]] * numSamples
-            meanSampleFeatures['features'] += means.tolist()
-            minSampleFeatures['channels'] += [channels[i]] * numSamples
-            minSampleFeatures['features'] += mins.tolist()
-            maxSampleFeatures['channels'] += [channels[i]] * numSamples
-            maxSampleFeatures['features'] += maxes.tolist()
-            stdSampleFeatures['channels'] += [channels[i]] * numSamples
-            stdSampleFeatures['features'] += stds.tolist()
+            meanVarsDict['sample size'].append(size)
+            meanVarsDict['variance'].append(np.std(means) ** 2)
+            
+            meanVars.append(np.std(means) ** 2)
+            minVars.append(np.std(mins) ** 2)
+            maxVars.append(np.std(maxes) ** 2)
+            stdVars.append(np.std(stds) ** 2)
 
+            # Normalize the sample features
+            # means = (means - np.mean(means)) / np.std(means) 
+            # mins = (mins - np.mean(mins)) / np.std(mins) 
+            # maxes = (maxes - np.mean(maxes)) / np.std(maxes) 
+            # stds = (stds - np.mean(stds)) / np.std(stds) 
 
-        # print(f'Sample mean: {np.mean(means)}')
-        # print(f'Sample min: {np.mean(mins)}')
-        # print(f'Sample max: {np.mean(maxes)}')
-        # print(f'Sample std: {np.mean(stds)}')
-        # print()
-
-
-    # print(averagedPsds.shape)
-    # print(f'True mean: {np.mean(averagedPsds[0])}')
-    # print(f'True min: {np.min(averagedPsds[0])}')
-    # print(f'True max: {np.max(averagedPsds[0])}')
-    # print(f'True std: {np.std(averagedPsds[0])}')
-    # print(meanVars)
-    # print(minVars)
-    # print(maxVars)
-    # print(stdVars)
-
-    # plt.plot(sampleSizes, meanVars, marker='.')
-    # plt.ylabel('Variance')
-    # plt.xlabel('Sample size')
-    # plt.savefig('fig.png')
-    # plt.show()
+            if (size == 50) :
+                meanSampleFeatures['channels'] += [channels[i]] * numSamples
+                meanSampleFeatures['features'] += means.tolist()
+                minSampleFeatures['channels'] += [channels[i]] * numSamples
+                minSampleFeatures['features'] += mins.tolist()
+                maxSampleFeatures['channels'] += [channels[i]] * numSamples
+                maxSampleFeatures['features'] += maxes.tolist()
+                stdSampleFeatures['channels'] += [channels[i]] * numSamples
+                stdSampleFeatures['features'] += stds.tolist()
 
 
-plot = sns.violinplot(pd.DataFrame.from_dict(meanSampleFeatures), x='channels', y='features')
-fig = plot.get_figure()
-fig.savefig("out.png") 
+            # print(f'Sample mean: {np.mean(means)}')
+            # print(f'Sample min: {np.mean(mins)}')
+            # print(f'Sample max: {np.mean(maxes)}')
+            # print(f'Sample std: {np.mean(stds)}')
+            # print()
+
+
+        # print(averagedPsds.shape)
+        # print(f'True mean: {np.mean(averagedPsds[0])}')
+        # print(f'True min: {np.min(averagedPsds[0])}')
+        # print(f'True max: {np.max(averagedPsds[0])}')
+        # print(f'True std: {np.std(averagedPsds[0])}')
+        # print(meanVars)
+        # print(minVars)
+        # print(maxVars)
+        # print(stdVars)
+
+        # plt.plot(sampleSizes, meanVars, marker='.')
+        # plt.ylabel('Variance')
+        # plt.xlabel('Sample size')
+        # plt.savefig('fig.png')
+        # plt.show()
+
+        # Violinplot of features vs sample size for a given channel and time window
+        # plt.figure(figsize=(12, 8))
+        # plot = sns.violinplot(pd.DataFrame.from_dict(d), x='sample size', y='features')
+        # plt.xlabel('Sample Size', fontsize=25)
+        # plt.ylabel('Mean', fontsize=25)
+        # plt.xticks(fontsize=25)
+        # fig_padding = 0.1
+        # plt.subplots_adjust(left=fig_padding, right=1-fig_padding, top=1-fig_padding, bottom=fig_padding)
+        # fig = plot.get_figure()
+        # fig.savefig("out.png") 
+        # exit(0)
+
+    # Line plot of variance vs sample size 
+    # plot = sns.lineplot(pd.DataFrame.from_dict(meanVarsDict), x='sample size', 
+    #     y='variance', orient='x')
+    # plt.xlabel('')
+    # plt.ylabel('')
+    # plt.xticks(fontsize=25)
+    # plt.yticks(fontsize=25)
+    # axes[r][c].title.set_text(channels[i])
+    # axes[r][c].set(xlabel=None, ylabel=None)
+    c = i % 2
+    r = int((i - (i % 2)) / 2)
+    plot = sns.lineplot(pd.DataFrame.from_dict(meanVarsDict), x='sample size', 
+        y='variance', orient='x', ax=axes[r][c])
+    axes[r][c].title.set_text('')
+    axes[r][c].title.set_fontsize(25) 
+    axes[r][c].set(xlabel=None, ylabel=None)
+    axes[r][c].tick_params(axis='x', labelsize=25)
+    # fig = plot.get_figure()
+    # fig.savefig("out.png") 
+    # exit(0)
+# plt.xlabel('Sample Size')
+# plt.ylabel('Variance')
+plt.xlabel('')
+plt.ylabel('')
+# plt.xticks(fontsize=25)
+# for ax in axes:
+#     ax.tick_params(axis='x', labelsize=25)
+f.savefig('out1.png')
+
+# plot = sns.violinplot(pd.DataFrame.from_dict(meanSampleFeatures), x='channels', y='features')
+# fig = plot.get_figure()
+# fig.savefig("out.png") 
 

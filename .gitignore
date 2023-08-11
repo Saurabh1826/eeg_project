@@ -3,13 +3,18 @@ config.json
 .DS_Store
 bidsData/
 pwd_file.bin
-temp.edf
+*.edf
 env/
 env2/
 fig.png
 features.json
 fig.png
 out.png
+*.json
+*.csv
+temp.py
+*.png
+*.pkl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

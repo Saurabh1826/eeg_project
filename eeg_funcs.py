@@ -10,6 +10,9 @@ import math
 import sys
 from scipy.integrate import simps
 from joblib import Parallel, delayed
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.decomposition import PCA
 
 
 # Function to identify clip start/end pairs (in seconds) in iEEG annotations
@@ -912,3 +915,192 @@ def averagePsds(signal, sfreq, timeWindow, numBands) :
       ind += timeWindow * sfreq
   
   return np.array(averagedPsds).T
+
+
+# Function to return all the runs in an ieeg file. Returns None on failure. 
+# On success, returns a tuple (dataClips, channels, sfreq). dataClips is a list of 
+# numpy arrays that are the runs, and channels is a list of the channels that were
+# kept (only channels that are in channelsRef are retained)
+def getRuns(session, file, channelsRef, printProgress=False) :
+  ## LOAD FILE ##
+  try :
+    dataset = session.open_dataset(file)
+  except :
+    return None, None, None
+  ch_names = dataset.get_channel_labels() # Get channel labels and put them in ch_names array 
+  details = dataset.get_time_series_details(ch_names[0]) # Assign time_series_details object to details variable
+  sfreq = details.sample_rate 
+  ch_indices = [i for i in range(len(ch_names))] # ch_indices array (array of indices for each channel)
+  pairs = get_annotation_times(dataset, 'EEG clip times')
+  data_clips = []
+
+  # Create mask for which channels to keep
+  mask = []
+  # Array of the retained channels
+  channels = []
+  for channelName in ch_names :
+    channelName = channelName.lower()
+    if (channelName in channelsRef) :
+      mask.append(True)
+      channels.append(channelName)
+    else :
+      mask.append(False)
+  
+  # Assert that all the desired channels are present
+  assert len(channels) == len(channelsRef)
+
+  for i in range(len(pairs)) :
+    if (printProgress) : print('-----', i)
+    start, end = pairs[i][0], pairs[i][1]
+    while (True) :
+      try :
+        data = load_full_channels(dataset, end-start, sfreq, ch_indices, offset_time=start)
+        break
+      except :
+        continue
+    data = data.T
+    # Keep only the desired channels in data
+    data = data[mask, :]
+    # Add data to data_clips
+    data_clips.append(data)
+  
+  ## Chop off NaNs from downloaded clips ##
+  for i in range(len(data_clips)) :
+    clip = data_clips[i]
+    max_first_num = 0
+    min_last_num = len(clip[0])-1
+    for j in range(len(clip)) :
+      first_num = 0
+      last_num = len(clip[0])-1
+      while (np.isnan(clip[j][first_num])) :
+        first_num += 1
+      while (np.isnan(clip[j][last_num])) :
+        last_num -= 1
+      max_first_num, min_last_num = max(max_first_num, first_num), min(min_last_num, last_num)
+    # Adjust start/end times of the clip appropriately
+    pairs[i][0] += max_first_num / sfreq
+    pairs[i][1] -= (len(clip[0]) - 1 - min_last_num) / sfreq
+    data_clips[i] = data_clips[i][:, max_first_num:min_last_num+1] # Cut out nan segments of data
+
+    # Run clip through 0.5 Hz high pass filter
+    high_pass = create_high_pass_filter(4, 0.5, sfreq)
+    data_clips[i] = apply_filter(data_clips[i], high_pass)
+  
+  return (data_clips, channels, sfreq)
+
+# Function to, given a list of lists of features, impute the missing values with
+# -1
+def impute(featureArr):
+    # Step 1: Find the length of the longest list
+    max_length = max(len(sub_list) for sub_list in featureArr)
+    
+    # Step 2: Extend each sub-list with -1 values to match the length of the longest list
+    for sub_list in featureArr:
+        sub_list.extend([-1] * (max_length - len(sub_list)))
+    
+    return featureArr
+
+def warn(*args, **kwargs):
+  pass
+import warnings
+warnings.warn = warn
+
+# Function to, given an input feature matrix (of shape (numDataPoints, numFeatures))
+# X, and labels y, return a random subset of X and y of maximum size such that 
+# the number of data points in each class are equal
+def balancedSubsample(X, y, size=None, random_state=None):
+  if random_state is not None:
+      np.random.seed(random_state)
+
+  classes, class_counts = np.unique(y, return_counts=True)
+  min_class_count = np.min(class_counts)
+
+  if size is None or size > min_class_count:
+      size = min_class_count
+
+  X_balanced = []
+  y_balanced = []
+
+  for class_label in classes:
+    class_indices = np.where(y == class_label)[0]
+    selected_indices = np.random.choice(class_indices, size=size, replace=False)
+
+    X_balanced.extend(X[selected_indices])
+    y_balanced.extend(y[selected_indices])
+
+  X_balanced = np.array(X_balanced)
+  y_balanced = np.array(y_balanced)
+
+  return X_balanced, y_balanced
+
+# Function to, given an sklearn model, input feature matrix (of shape 
+# (numDataPoints, numFeatures)) X, and labels y, perform LOSO cross validation 
+# and return the average accuracy, sensitivity, and specificity
+def losoCrossVal(model, X, y, balanceClasses=False, threshold=0.5) :
+  loo = LeaveOneOut()
+
+  accuracies = []
+  # True positive rate (sensitivity)
+  tpr = []
+  # True negative rate (specificity)
+  tnr = []
+  aucs = []
+  cnt = 0
+  for train_index, test_index in loo.split(X):
+    cnt += 1
+    print(cnt)
+    X_train, X_test = X[train_index], X[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+
+    # Subsample X_train, y_train to make class balanced
+    # if (balanceClasses) :
+    #   X_train, y_train = balancedSubsample(X_train, y_train)
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    if (y_test[0] == 1) :
+      tpr.append(y_pred[0])
+    else :
+      tnr.append(1 - y_pred[0])
+    
+    accuracies.append(accuracy)
+
+  # print(accuracies)
+  # print(y)
+  avg_accuracy = np.mean(accuracies)
+  avg_sensitivity = np.mean(tpr)
+  avg_specificity = np.mean(tnr)
+
+  return avg_accuracy, avg_sensitivity, avg_specificity
+
+
+# Function to, given an input feature matrix (of shape (numDataPoints, numFeatures)) 
+# X, and labels y, perform sklearn PCA to reduce the dimensionality to 2 
+# dimensions, and then plot a scatter plot that is color coded based on the label
+def plotPcaScatter(X, y) :
+  pca = PCA(n_components=2)
+  X_pca = pca.fit_transform(X)
+
+  # Get unique labels for color coding
+  unique_labels = np.unique(y)
+
+  # Create a scatter plot with color-coded labels
+  for label in unique_labels :
+    plt.scatter(X_pca[y == label, 0], X_pca[y == label, 1], label=str(label))
+
+  # Customize the plot
+  plt.xlabel('Principal Component 1')
+  plt.ylabel('Principal Component 2')
+  plt.title('PCA Scatter Plot')
+  plt.legend()
+
+  plt.savefig('scatter.png')
+
+  # Show the plot
+  plt.show()
+
+
+
